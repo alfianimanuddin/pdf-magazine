@@ -65,7 +65,7 @@
 
 .page {
   background-color: white;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 2px 1px rgba(217, 217, 217, 0.25);
 }
 
 .page-content {
@@ -75,7 +75,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 1px solid #e5e7eb;
+  /* border: 1px solid #e5e7eb; */
 }
 
 /* Smooth page transitions */
@@ -86,6 +86,19 @@
 .stf__item {
   transform-style: preserve-3d;
   backface-visibility: hidden;
+}
+
+/* Fullscreen enhancements */
+:fullscreen {
+  background: linear-gradient(to bottom right, #f9fafb, #ffffff, #f3f4f6);
+}
+
+:-webkit-full-screen {
+  background: linear-gradient(to bottom right, #f9fafb, #ffffff, #f3f4f6);
+}
+
+:-moz-full-screen {
+  background: linear-gradient(to bottom right, #f9fafb, #ffffff, #f3f4f6);
 }
 
 /* Loading spinner */
