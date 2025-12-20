@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
     openssl \
     ca-certificates \
     graphicsmagick \
+    ghostscript \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 1001 nodejs
 RUN useradd --system --uid 1001 nextjs
