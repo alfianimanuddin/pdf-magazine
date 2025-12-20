@@ -222,10 +222,10 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       onMouseEnter={handleMouseEnter}
     >
       {/* Header - Top Bar */}
-      <div className={`absolute top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-8 py-2 border-b border-gray-100 transition-transform duration-300 ${
+      <div className={`absolute top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
         isFullscreen && !showControls ? '-translate-y-full' : 'translate-y-0'
       }`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="mx-auto flex items-center justify-between gap-4">
           {showTitle ? (
             <>
               {/* Title - Left */}
@@ -357,8 +357,11 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         )}
 
         {/* Center Spine Shadow Effect (Desktop only) - Realistic binding shadow */}
-        {!isMobile && !isTablet && currentPage > 0 && (
-          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 pointer-events-none z-30 w-20">
+        {!isMobile && !isTablet && (
+          <div
+            className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 pointer-events-none z-30 w-20 transition-opacity duration-1000"
+            style={{ opacity: currentPage === 0 ? 0 : 1 }}
+          >
             <svg
               className="absolute inset-0 w-full h-full"
               preserveAspectRatio="none"
@@ -381,14 +384,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         )}
 
         {/* Decorative Edge Stripes (Desktop only) - Book-like visual edges with dynamic width */}
-        {!isMobile && !isTablet && currentPage > 0 && (
+        {!isMobile && !isTablet && (
           <>
             {/* Left Decorative Stripe - width based on pages remaining */}
             <div
-              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-300"
+              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-1000"
               style={{
                 left: '100%',
-                width: `${Math.max(2, ((totalPages - currentPage - 1) / totalPages) * 12)}px`
+                width: `${Math.max(2, ((totalPages - currentPage - 1) / totalPages) * 12)}px`,
+                opacity: currentPage === 0 ? 0 : 1
               }}
             >
               {/* Wavy page edge effect using SVG */}
@@ -417,10 +421,11 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
 
             {/* Right Decorative Stripe - width based on pages read */}
             <div
-              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-300"
+              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-1000"
               style={{
                 right: '100%',
-                width: `${Math.max(2, (currentPage / totalPages) * 12)}px`
+                width: `${Math.max(2, (currentPage / totalPages) * 12)}px`,
+                opacity: currentPage === 0 ? 0 : 1
               }}
             >
               {/* Wavy page edge effect using SVG */}
