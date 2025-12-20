@@ -1,0 +1,26 @@
+{
+  "name": "Tada Todays Magazine Platform",
+  "short_name": "Tada Todays",
+  "description": "Digital magazine platform with interactive page flipping",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["magazines", "news", "entertainment"],
+  "lang": "id",
+  "dir": "ltr"
+}
