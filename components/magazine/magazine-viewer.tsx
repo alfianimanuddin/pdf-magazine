@@ -238,7 +238,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
               >
                 <span className="text-gray-700 text-sm md:text-sm font-medium">
                   {currentPage === 0
-                    ? `Pages 1 - 2 of ${totalPages}`
+                    ? `Page 1 of ${totalPages}`
                     : currentPage >= totalPages - 1
                       ? `Page ${totalPages} of ${totalPages}`
                       : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
@@ -251,7 +251,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
               {/* Page Counter - Left */}
               <span className="text-gray-700 text-sm md:text-sm font-medium">
                 {currentPage === 0
-                  ? `Pages 1 - 2 of ${totalPages}`
+                  ? `Page 1 of ${totalPages}`
                   : currentPage >= totalPages - 1
                     ? `Page ${totalPages} of ${totalPages}`
                     : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
@@ -281,7 +281,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       </div>
 
       {/* Magazine Book */}
-      <div className="relative z-10 magazine-container">
+      <div
+        className="relative z-10 magazine-container transition-all duration-300"
+        style={{
+          transform: currentPage === 0
+            ? `translateX(-250px)`
+            : 'translateX(0)',
+          display: 'flex'
+        }}
+      >
         <HTMLFlipBook
           key={`flipbook-${zoom}-${windowSize.width}`}
           ref={bookRef}
@@ -293,7 +301,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           minHeight={dimensions.minHeight}
           maxHeight={dimensions.maxHeight}
           showCover={true}
-          flippingTime={isMobile ? 600 : 1000}
+          flippingTime={isMobile ? 600 : 800}
           usePortrait={isMobile || isTablet}
           startPage={0}
           drawShadow={!isMobile && !isTablet}
