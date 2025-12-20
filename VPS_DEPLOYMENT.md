@@ -29,7 +29,7 @@ apt install docker-compose -y
 
 # Verify installations
 docker --version
-docker-compose --version
+docker-compose version
 ```
 
 ### 2️⃣ Setup Project Directory

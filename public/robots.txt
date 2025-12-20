@@ -1,0 +1,8 @@
+# robots.txt for Tada Todays Magazine Platform
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://majalah.tadatodays.com/sitemap.xml

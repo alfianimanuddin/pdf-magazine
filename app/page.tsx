@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen } from 'lucide-react'
 
+export const dynamic = 'force-dynamic' // Don't pre-render during build
 export const revalidate = 60 // Revalidate every minute
 
 export default async function HomePage() {

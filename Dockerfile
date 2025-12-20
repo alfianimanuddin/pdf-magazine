@@ -1,12 +1,16 @@
-FROM node:20-alpine AS base
+FROM node:20-bullseye-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -18,8 +22,9 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build Next.js
+# Build Next.js with dummy DATABASE_URL (not used during build)
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/magazine_platform"
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -29,8 +34,13 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    graphicsmagick \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 nextjs
 
 # Copy built application
 COPY --from=builder /app/public ./public
