@@ -284,7 +284,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       <div
         className="relative z-10 magazine-container transition-all duration-300"
         style={{
-          transform: currentPage === 0
+          transform: currentPage === 0 && !isMobile
             ? `translateX(-250px)`
             : 'translateX(0)',
           display: 'flex'
@@ -464,7 +464,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       </div>
 
       {/* Bottom Control Bar */}
-      <div className={`absolute bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-8 py-2 border-t border-gray-100 transition-transform duration-300 ${
+      <div className={`fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-8 py-2 border-t border-gray-100 transition-transform duration-300 ${
         isFullscreen && !showControls ? 'translate-y-full' : 'translate-y-0'
       }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
