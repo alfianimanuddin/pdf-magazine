@@ -27,8 +27,9 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   const [isTablet, setIsTablet] = useState(false)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
   const [showTitle, setShowTitle] = useState(false)
-  const [showControls, setShowControls] = useState(true)
+  const [showControls, setShowControls] = useState(false)
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const magazineRef = useRef<HTMLDivElement>(null)
 
   const totalPages = pages.length
 
@@ -52,24 +53,26 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     // In fullscreen, use larger dimensions
     if (isFullscreen) {
       if (isMobile) {
-        const pageWidth = windowSize.width - 20
+        const pageWidth = windowSize.width * 0.96 // 96% of screen width
+        const pageHeight = pageWidth * 1.414
+        return {
+          width: pageWidth * zoom,
+          height: pageHeight * zoom,
+          minWidth: 280 * zoom,
+          maxWidth: pageWidth * zoom,
+          minHeight: 396 * zoom,
+          maxHeight: pageHeight * 2 * zoom, // Allow flexible height
+        }
+      } else if (isTablet) {
+        const pageWidth = windowSize.width // Full width for tablet
         const pageHeight = pageWidth * 1.414
         return {
           width: pageWidth * zoom,
           height: Math.min(pageHeight, windowSize.height - 40) * zoom,
-          minWidth: 280 * zoom,
-          maxWidth: pageWidth * zoom,
-          minHeight: 396 * zoom,
-          maxHeight: (windowSize.height - 40) * zoom,
-        }
-      } else if (isTablet) {
-        return {
-          width: 700 * zoom,
-          height: 900 * zoom,
           minWidth: 500 * zoom,
-          maxWidth: 1000 * zoom,
+          maxWidth: pageWidth * zoom,
           minHeight: 700 * zoom,
-          maxHeight: 1200 * zoom,
+          maxHeight: (windowSize.height - 40) * zoom,
         }
       }
       // Desktop fullscreen - much larger
@@ -85,24 +88,26 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
 
     // Normal mode dimensions
     if (isMobile) {
-      const pageWidth = windowSize.width - 20 // 10px padding on each side
+      const pageWidth = windowSize.width * 0.96 // 96% of screen width
       const pageHeight = pageWidth * 1.414 // A4 aspect ratio (√2)
       return {
         width: pageWidth * zoom,
-        height: Math.min(pageHeight, windowSize.height - 180) * zoom,
+        height: pageHeight * zoom,
         minWidth: 280 * zoom,
         maxWidth: pageWidth * zoom,
         minHeight: 396 * zoom,
-        maxHeight: (windowSize.height - 180) * zoom,
+        maxHeight: pageHeight * 2 * zoom, // Allow flexible height
       }
     } else if (isTablet) {
+      const pageWidth = windowSize.width // Full width for tablet
+      const pageHeight = pageWidth * 1.414
       return {
-        width: 600 * zoom,
-        height: 800 * zoom,
+        width: pageWidth * zoom,
+        height: Math.min(pageHeight, windowSize.height - 120) * zoom,
         minWidth: 400 * zoom,
-        maxWidth: 800 * zoom,
+        maxWidth: pageWidth * zoom,
         minHeight: 534 * zoom,
-        maxHeight: 1067 * zoom,
+        maxHeight: (windowSize.height - 120) * zoom,
       }
     }
     return {
@@ -115,13 +120,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [isMobile, isTablet, zoom, windowSize.width, windowSize.height, isFullscreen])
 
-  const goToNextPage = useCallback(() => {
+  const goToNextPage = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (bookRef.current) {
       bookRef.current.pageFlip().flipNext()
     }
   }, [])
 
-  const goToPrevPage = useCallback(() => {
+  const goToPrevPage = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (bookRef.current) {
       bookRef.current.pageFlip().flipPrev()
     }
@@ -191,6 +198,21 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [isFullscreen])
 
+  // Handle click to toggle controls when clicking outside magazine
+  const handleContainerClick = useCallback((e: React.MouseEvent) => {
+    if (magazineRef.current && !magazineRef.current.contains(e.target as Node)) {
+      setShowControls((prev) => !prev)
+
+      // Auto-hide after 3 seconds
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current)
+      }
+      hideControlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false)
+      }, 3000)
+    }
+  }, [])
+
   // Clean up timeout on unmount
   useEffect(() => {
     return () => {
@@ -203,14 +225,13 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   // Reset controls visibility when entering/exiting fullscreen
   useEffect(() => {
     if (isFullscreen) {
-      // Hide controls initially after a delay when entering fullscreen
+      // Show controls initially when entering fullscreen
+      setShowControls(true)
+      // Hide controls after a delay when entering fullscreen
       const timeout = setTimeout(() => {
         setShowControls(false)
       }, 3000)
       return () => clearTimeout(timeout)
-    } else {
-      // Always show controls in normal mode
-      setShowControls(true)
     }
   }, [isFullscreen])
 
@@ -220,74 +241,114 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       className="relative w-full h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center overflow-hidden"
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
+      onClick={handleContainerClick}
     >
       {/* Header - Top Bar */}
       <div className={`absolute top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
         isFullscreen && !showControls ? '-translate-y-full' : 'translate-y-0'
       }`}>
         <div className="mx-auto flex items-center justify-between gap-4">
-          {showTitle ? (
+          {/* Mobile Layout: Fullscreen - Title - Share */}
+          {isMobile ? (
             <>
-              {/* Title - Left */}
-              <h1 className="text-gray-800 text-base md:text-m font-bold">{title}</h1>
-
-              {/* Page Counter - Center */}
-              <button
-                onClick={() => setShowTitle(false)}
-                className="absolute left-1/2 -translate-x-1/2 hover:opacity-70 transition-opacity cursor-pointer"
+              {/* Fullscreen Button - Left */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
               >
-                <span className="text-gray-700 text-sm md:text-sm font-medium">
-                  {currentPage === 0
-                    ? `Page 1 of ${totalPages}`
-                    : currentPage >= totalPages - 1
-                      ? `Page ${totalPages} of ${totalPages}`
-                      : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
-                  }
-                </span>
-              </button>
+                {isFullscreen ? (
+                  <Minimize2 className="h-5 w-5" />
+                ) : (
+                  <Maximize2 className="h-5 w-5" />
+                )}
+              </Button>
+
+              {/* Title - Center */}
+              <h1 className="text-gray-800 text-base font-bold flex-1 text-center">{title}</h1>
+
+              {/* Share Button - Right */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
             </>
           ) : (
             <>
-              {/* Page Counter - Left */}
-              <span className="text-gray-700 text-sm md:text-sm font-medium">
-                {currentPage === 0
-                  ? `Page 1 of ${totalPages}`
-                  : currentPage >= totalPages - 1
-                    ? `Page ${totalPages} of ${totalPages}`
-                    : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
-                }
-              </span>
+              {/* Desktop/Tablet Layout */}
+              {showTitle ? (
+                <>
+                  {/* Title - Left */}
+                  <h1 className="text-gray-800 text-base md:text-m font-bold">{title}</h1>
 
-              {/* Title - Center */}
-              <button
-                onClick={() => setShowTitle(true)}
-                className="absolute left-1/2 -translate-x-1/2 hover:opacity-70 transition-opacity cursor-pointer"
+                  {/* Page Counter - Center */}
+                  <button
+                    onClick={() => setShowTitle(false)}
+                    className="absolute left-1/2 -translate-x-1/2 hover:opacity-70 transition-opacity cursor-pointer"
+                  >
+                    <span className="text-gray-700 text-sm md:text-sm font-medium">
+                      {currentPage === 0
+                        ? `Page 1 of ${totalPages}`
+                        : currentPage >= totalPages - 1
+                          ? `Page ${totalPages} of ${totalPages}`
+                          : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
+                      }
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Page Counter - Left */}
+                  <span className="text-gray-700 text-sm md:text-sm font-medium">
+                    {currentPage === 0
+                      ? `Page 1 of ${totalPages}`
+                      : currentPage >= totalPages - 1
+                        ? `Page ${totalPages} of ${totalPages}`
+                        : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
+                    }
+                  </span>
+
+                  {/* Title - Center */}
+                  <button
+                    onClick={() => setShowTitle(true)}
+                    className="absolute left-1/2 -translate-x-1/2 hover:opacity-70 transition-opacity cursor-pointer"
+                  >
+                    <h1 className="text-gray-800 text-base md:text-m font-bold">{title}</h1>
+                  </button>
+                </>
+              )}
+
+              {/* Share Button - Right */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
               >
-                <h1 className="text-gray-800 text-base md:text-m font-bold">{title}</h1>
-              </button>
+                <Share2 className="h-5 w-5" />
+              </Button>
             </>
           )}
-
-          {/* Share Button - Right */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleShare}
-            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
         </div>
       </div>
 
       {/* Magazine Book */}
       <div
-        className="relative z-10 magazine-container transition-all duration-300"
+        ref={magazineRef}
+        className={`relative z-10 magazine-container transition-all duration-300 ${
+          isMobile || isTablet ? 'w-full' : ''
+        }`}
         style={{
-          transform: currentPage === 0 && !isMobile
+          transform: currentPage === 0 && !isMobile && !isTablet
             ? `translateX(-250px)`
             : 'translateX(0)',
-          display: 'flex'
+          display: 'flex',
+          justifyContent: 'center'
         }}
       >
         <HTMLFlipBook
@@ -308,7 +369,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           maxShadowOpacity={0.5}
           showPageCorners={false}
           disableFlipByClick={false}
-          style={{}}
+          style={isMobile || isTablet ? { width: '100%' } : {}}
           startZIndex={0}
           autoSize={true}
           mobileScrollSupport={true}
@@ -334,6 +395,17 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
                   className="object-contain"
                   priority={page.pageNumber <= 2}
                 />
+                {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
+                {(isMobile || isTablet) && (
+                  <div
+                    className="absolute top-0 left-0 bottom-0 pointer-events-none"
+                    style={{
+                      width: '40px',
+                      background: 'linear-gradient(to right, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.08) 30%, rgba(0, 0, 0, 0.03) 60%, transparent)',
+                      zIndex: 10
+                    }}
+                  />
+                )}
               </div>
             </div>
           ))}
@@ -343,10 +415,13 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         {/* Previous Page Button - Left Side */}
         {currentPage > 0 && (
           <button
-            onClick={goToPrevPage}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full mr-4 z-20 text-gray-600 hover:text-gray-800 transition-all duration-300 bg-white/10 hover:bg-white/20 rounded-full p-2 ${
-              isFullscreen && !showControls ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            onClick={(e) => goToPrevPage(e)}
+            className={`absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
+              isMobile || isTablet
+                ? 'left-2 text-white bg-black/20 hover:bg-black/30'
+                : 'left-0 -translate-x-full mr-4 text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
             }`}
+            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' } : {}}
           >
             <ChevronLeft className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
           </button>
@@ -355,10 +430,13 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         {/* Next Page Button - Right Side */}
         {currentPage + 2 < totalPages && (
           <button
-            onClick={goToNextPage}
-            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full ml-4 z-20 text-gray-600 hover:text-gray-800 transition-all duration-300 bg-white/10 hover:bg-white/20 rounded-full p-2 ${
-              isFullscreen && !showControls ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            onClick={(e) => goToNextPage(e)}
+            className={`absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
+              isMobile || isTablet
+                ? 'right-2 text-white bg-black/20 hover:bg-black/30'
+                : 'right-0 translate-x-full ml-4 text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
             }`}
+            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' } : {}}
           >
             <ChevronRight className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
           </button>
@@ -468,42 +546,54 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         isFullscreen && !showControls ? 'translate-y-full' : 'translate-y-0'
       }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
-          {/* Zoom and Fullscreen Controls - Centered */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={zoomOut}
-              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
-              disabled={zoom <= 0.6}
-            >
-              <ZoomOut className="h-5 w-5" />
-            </Button>
-            <span className="text-gray-700 text-sm min-w-[50px] text-center font-medium">
-              {Math.round(zoom * 100)}%
+          {isMobile ? (
+            /* Mobile: Page Counter */
+            <span className="text-gray-700 text-sm font-medium">
+              {currentPage === 0
+                ? `Page 1 of ${totalPages}`
+                : currentPage >= totalPages - 1
+                  ? `Page ${totalPages} of ${totalPages}`
+                  : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
+              }
             </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={zoomIn}
-              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
-              disabled={zoom >= 2}
-            >
-              <ZoomIn className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleFullscreen}
-              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9 ml-1"
-            >
-              {isFullscreen ? (
-                <Minimize2 className="h-5 w-5" />
-              ) : (
-                <Maximize2 className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+          ) : (
+            /* Desktop/Tablet: Zoom and Fullscreen Controls */
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomOut}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+                disabled={zoom <= 0.6}
+              >
+                <ZoomOut className="h-5 w-5" />
+              </Button>
+              <span className="text-gray-700 text-sm min-w-[50px] text-center font-medium">
+                {Math.round(zoom * 100)}%
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomIn}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+                disabled={zoom >= 2}
+              >
+                <ZoomIn className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9 ml-1"
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="h-5 w-5" />
+                ) : (
+                  <Maximize2 className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
