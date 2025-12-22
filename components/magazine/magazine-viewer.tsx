@@ -418,10 +418,10 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
             onClick={(e) => goToPrevPage(e)}
             className={`absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
               isMobile || isTablet
-                ? 'left-2 text-white bg-black/20 hover:bg-black/30'
+                ? 'text-white bg-black/20 hover:bg-black/30'
                 : 'left-0 -translate-x-full mr-4 text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
             }`}
-            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' } : {}}
+            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', left: '1rem' } : {}}
           >
             <ChevronLeft className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
           </button>
@@ -433,10 +433,10 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
             onClick={(e) => goToNextPage(e)}
             className={`absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
               isMobile || isTablet
-                ? 'right-2 text-white bg-black/20 hover:bg-black/30'
+                ? 'text-white bg-black/20 hover:bg-black/30'
                 : 'right-0 translate-x-full ml-4 text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
             }`}
-            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' } : {}}
+            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', right: '1rem' } : {}}
           >
             <ChevronRight className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
           </button>
