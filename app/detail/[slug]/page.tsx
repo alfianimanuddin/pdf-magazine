@@ -12,6 +12,12 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const magazine = await prisma.magazine.findUnique({
     where: { slug: params.slug, published: true },
+    include: {
+      pages: {
+        orderBy: { pageNumber: 'asc' },
+        take: 1,
+      },
+    },
   })
 
   if (!magazine) {
@@ -20,9 +26,48 @@ export async function generateMetadata({ params }: PageProps) {
     }
   }
 
+  // Use coverImage if available, otherwise use first page image, fallback to default
+  const ogImagePath = magazine.coverImage ||
+                      (magazine.pages[0]?.imagePath) ||
+                      '/og-image.jpg'
+
+  const baseUrl = 'https://majalah.tadatodays.com'
+  const pageUrl = `${baseUrl}/detail/${magazine.slug}`
+
+  // Ensure absolute URL for social media platforms (WhatsApp, Facebook, etc.)
+  const ogImage = ogImagePath.startsWith('http')
+    ? ogImagePath
+    : `${baseUrl}${ogImagePath.startsWith('/') ? ogImagePath : '/' + ogImagePath}`
+
   return {
     title: `${magazine.title} - Tada Todays Magazine`,
     description: magazine.description || `Read ${magazine.title} online`,
+    openGraph: {
+      type: 'article',
+      locale: 'id_ID',
+      url: pageUrl,
+      title: magazine.title,
+      description: magazine.description || `Read ${magazine.title} online`,
+      siteName: 'Tadatodays Magazine',
+      publishedTime: magazine.createdAt.toISOString(),
+      modifiedTime: magazine.updatedAt.toISOString(),
+      authors: ['Tadatodays'],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: magazine.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: magazine.title,
+      description: magazine.description || `Read ${magazine.title} online`,
+      images: [ogImage],
+      creator: '@tadatodays',
+    },
   }
 }
 

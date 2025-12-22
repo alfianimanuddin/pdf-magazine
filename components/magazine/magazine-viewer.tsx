@@ -296,14 +296,21 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [currentPage, pages])
 
+  // Prevent right-click context menu
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    return false
+  }, [])
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center overflow-hidden"
+      className="relative w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center overflow-hidden select-none"
       style={{ height: '100vh' }}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onClick={handleContainerClick}
+      onContextMenu={handleContextMenu}
     >
       {/* Header - Top Bar */}
       <div className={`fixed top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
@@ -462,6 +469,8 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
                     className="object-contain"
                     priority={shouldPreload}
                     loading={shouldPreload ? 'eager' : 'lazy'}
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
                   />
                   {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
                   {(isMobile || isTablet) && (

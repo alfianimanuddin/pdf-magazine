@@ -6,14 +6,23 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: {
-    default: "Tada Todays Magazine Platform",
-    template: "%s | Tada Todays",
+    default: "Majalah Digital Tadatodays",
+    template: "%s | Tadatodays",
   },
-  description: "Digital magazine platform with interactive page flipping. Read the latest issues of Tada Todays magazine online.",
-  keywords: ["magazine", "digital magazine", "Tada Todays", "online reading", "flip book", "interactive magazine"],
-  authors: [{ name: "Tada Todays" }],
-  creator: "Tada Todays",
-  publisher: "Tada Todays",
+  description:
+    "Majalah digital Tadatodays menghadirkan liputan khusus, cerita mendalam, dan perspektif editorial pilihan dalam pengalaman membaca interaktif berkelas.",
+  keywords: [
+    "majalah digital",
+    "majalah editorial",
+    "liputan khusus",
+    "Tadatodays",
+    "majalah online Indonesia",
+    "majalah interaktif",
+    "jurnalisme mendalam",
+  ],
+  authors: [{ name: "Tadatodays" }],
+  creator: "Tadatodays",
+  publisher: "Tadatodays",
   formatDetection: {
     email: false,
     address: false,
@@ -27,22 +36,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     url: "https://majalah.tadatodays.com",
-    title: "Tada Todays Magazine Platform",
-    description: "Digital magazine platform with interactive page flipping. Read the latest issues of Tada Todays magazine online.",
-    siteName: "Tada Todays Magazine",
+    title: "Majalah Digital Tadatodays",
+    description:
+      "Ruang baca editorial Tadatodays untuk liputan khusus, cerita mendalam, dan narasi visual yang dikurasi dalam format majalah digital interaktif.",
+    siteName: "Tadatodays Magazine",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Tada Todays Magazine Platform",
+        alt: "Majalah Digital Tadatodays – Liputan Khusus & Editorial",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tada Todays Magazine Platform",
-    description: "Digital magazine platform with interactive page flipping. Read the latest issues of Tada Todays magazine online.",
+    title: "Majalah Digital Tadatodays",
+    description:
+      "Liputan khusus dan editorial pilihan Tadatodays, disajikan dalam format majalah digital interaktif berkelas.",
     images: ["/og-image.jpg"],
     creator: "@tadatodays",
   },
@@ -62,9 +73,7 @@ export const metadata: Metadata = {
       { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: [
-      { url: "/apple-icon.svg", type: "image/svg+xml" },
-    ],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
   },
   manifest: "/manifest.json",
   themeColor: "#ffffff",
@@ -80,6 +89,7 @@ export const metadata: Metadata = {
     // bing: "your-bing-verification-code",
   },
 }
+
 
 export default function RootLayout({
   children,
