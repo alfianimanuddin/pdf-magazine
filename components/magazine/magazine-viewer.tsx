@@ -235,6 +235,30 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [isFullscreen])
 
+  // Prefetch adjacent pages for instant flipping
+  useEffect(() => {
+    // Prefetch 3 pages ahead for smooth forward navigation
+    const pagesToPrefetch = [
+      currentPage + 1,
+      currentPage + 2,
+      currentPage + 3,
+    ].filter(idx => idx >= 0 && idx < pages.length)
+
+    pagesToPrefetch.forEach(pageIdx => {
+      const link = document.createElement('link')
+      link.rel = 'prefetch'
+      link.as = 'image'
+      link.href = pages[pageIdx].imagePath
+      document.head.appendChild(link)
+    })
+
+    // Cleanup: remove prefetch links when currentPage changes
+    return () => {
+      const links = document.querySelectorAll('link[rel="prefetch"]')
+      links.forEach(link => link.remove())
+    }
+  }, [currentPage, pages])
+
   return (
     <div
       ref={containerRef}
@@ -380,35 +404,42 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           onFlip={onFlip}
           className="magazine-book"
         >
-          {pages.map((page, index) => (
-            <div
-              key={page.id}
-              className="page bg-white"
-              style={{ boxShadow: '0 0 2px 1px rgba(140, 140, 140, 0.25)' }}
-              data-density={index === 0 ? "hard" : "soft"}
-            >
-              <div className="page-content relative w-full h-full">
-                <Image
-                  src={page.imagePath}
-                  alt={`Page ${page.pageNumber}`}
-                  fill
-                  className="object-contain"
-                  priority={page.pageNumber <= 2}
-                />
-                {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
-                {(isMobile || isTablet) && (
-                  <div
-                    className="absolute top-0 left-0 bottom-0 pointer-events-none"
-                    style={{
-                      width: '40px',
-                      background: 'linear-gradient(to right, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.08) 30%, rgba(0, 0, 0, 0.03) 60%, transparent)',
-                      zIndex: 10
-                    }}
+          {pages.map((page, index) => {
+            // Preload current page and adjacent pages (2 before, 4 ahead for smooth flipping)
+            const shouldPreload = index <= 2 || // Always preload first 2 pages
+              (index >= currentPage - 2 && index <= currentPage + 4)
+
+            return (
+              <div
+                key={page.id}
+                className="page bg-white"
+                style={{ boxShadow: '0 0 2px 1px rgba(140, 140, 140, 0.25)' }}
+                data-density={index === 0 ? "hard" : "soft"}
+              >
+                <div className="page-content relative w-full h-full">
+                  <Image
+                    src={page.imagePath}
+                    alt={`Page ${page.pageNumber}`}
+                    fill
+                    className="object-contain"
+                    priority={shouldPreload}
+                    loading={shouldPreload ? 'eager' : 'lazy'}
                   />
-                )}
+                  {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
+                  {(isMobile || isTablet) && (
+                    <div
+                      className="absolute top-0 left-0 bottom-0 pointer-events-none"
+                      style={{
+                        width: '40px',
+                        background: 'linear-gradient(to right, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.08) 30%, rgba(0, 0, 0, 0.03) 60%, transparent)',
+                        zIndex: 10
+                      }}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </HTMLFlipBook>
 
         {/* Navigation Controls - Left & Right Buttons */}

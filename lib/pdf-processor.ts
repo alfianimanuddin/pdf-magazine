@@ -57,7 +57,7 @@ export async function processPDF(
       const optimizedPath = path.join(pagesDir, `page-${i}.webp`)
       
       await sharp(pageResult.path)
-        .webp({ quality: 85 })
+        .webp({ quality: 78 })
         .toFile(optimizedPath)
       
       // Delete original PNG
