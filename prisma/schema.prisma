@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Magazine {
-  id           String         @id
+  id           String         @id @default(cuid())
   title        String
   description  String?
   coverImage   String?
@@ -17,7 +17,7 @@ model Magazine {
   totalPages   Int
   published    Boolean        @default(false)
   createdAt    DateTime       @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime       @updatedAt
   userId       String
   User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   MagazinePage MagazinePage[]
@@ -29,7 +29,7 @@ model Magazine {
 }
 
 model MagazinePage {
-  id         String   @id
+  id         String   @id @default(cuid())
   magazineId String
   pageNumber Int
   imagePath  String
@@ -40,7 +40,7 @@ model MagazinePage {
 }
 
 model MagazineView {
-  id         String   @id
+  id         String   @id @default(cuid())
   magazineId String
   viewedAt   DateTime @default(now())
   ipAddress  String?
@@ -52,13 +52,13 @@ model MagazineView {
 }
 
 model User {
-  id        String     @id
+  id        String     @id @default(cuid())
   email     String     @unique
   password  String
   name      String?
   role      Role       @default(ADMIN)
   createdAt DateTime   @default(now())
-  updatedAt DateTime
+  updatedAt DateTime   @updatedAt
   Magazine  Magazine[]
 }
 
