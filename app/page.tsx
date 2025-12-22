@@ -13,7 +13,7 @@ export default async function HomePage() {
     orderBy: { createdAt: 'desc' },
     include: {
       _count: {
-        select: { views: true },
+        select: { MagazineView: true },
       },
     },
   })
@@ -105,7 +105,7 @@ export default async function HomePage() {
                       )}
                       <div className="flex items-center justify-between text-xs text-slate-400">
                         <span>{magazine.totalPages} halaman</span>
-                        <span>{magazine._count.views} views</span>
+                        <span>{magazine._count.MagazineView} views</span>
                       </div>
                       <div className="text-xs text-slate-400 mt-1">
                         {formatDate(magazine.createdAt)}
