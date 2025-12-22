@@ -340,8 +340,8 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       {/* Magazine Book */}
       <div
         ref={magazineRef}
-        className={`relative z-10 magazine-container transition-all duration-300 ${
-          isMobile || isTablet ? 'w-full' : ''
+        className={`relative z-10 magazine-container ${
+          isMobile || isTablet ? 'w-full' : 'transition-all duration-300'
         }`}
         style={{
           transform: currentPage === 0 && !isMobile && !isTablet
