@@ -387,7 +387,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           minHeight={dimensions.minHeight}
           maxHeight={dimensions.maxHeight}
           showCover={true}
-          flippingTime={isMobile ? 600 : 800}
+          flippingTime={isMobile ? 500 : 800}
           usePortrait={isMobile || isTablet}
           startPage={0}
           drawShadow={!isMobile && !isTablet}
@@ -399,7 +399,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           autoSize={true}
           mobileScrollSupport={true}
           useMouseEvents={!isMobile && !isTablet}
-          swipeDistance={isMobile || isTablet ? 50 : 30}
+          swipeDistance={isMobile || isTablet ? 30 : 30}
           clickEventForward={true}
           renderOnlyPageLengthChange={false}
           onFlip={onFlip}
