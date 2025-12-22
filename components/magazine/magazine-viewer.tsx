@@ -262,13 +262,14 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center overflow-hidden"
+      className="relative w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center overflow-hidden"
+      style={{ height: '100vh' }}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onClick={handleContainerClick}
     >
       {/* Header - Top Bar */}
-      <div className={`absolute top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
+      <div className={`fixed top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
         isFullscreen && !showControls ? '-translate-y-full' : 'translate-y-0'
       }`}>
         <div className="mx-auto flex items-center justify-between gap-4">
