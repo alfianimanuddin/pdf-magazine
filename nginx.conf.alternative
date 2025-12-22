@@ -11,7 +11,7 @@ http {
     server {
         listen 80;
         server_name majalah.tadatodays.com;
-        
+
         location /.well-known/acme-challenge/ {
             root /var/www/certbot;
         }
@@ -29,13 +29,31 @@ http {
         # SSL Configuration
         ssl_certificate /etc/nginx/ssl/fullchain.pem;
         ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-        
+
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
         ssl_prefer_server_ciphers on;
 
         # Client upload size
         client_max_body_size 50M;
+
+        # ALTERNATIVE: Serve uploads directly from nginx (BETTER PERFORMANCE)
+        # This requires mounting the uploads volume to nginx container
+        location /uploads {
+            alias /app/public/uploads;
+            expires 1y;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+
+            # Set proper MIME types
+            types {
+                image/jpeg jpg jpeg;
+                image/png png;
+                image/webp webp;
+                image/gif gif;
+                image/svg+xml svg;
+            }
+            default_type application/octet-stream;
+        }
 
         # Proxy to Next.js
         location / {
@@ -56,14 +74,6 @@ http {
             proxy_pass http://nextjs;
             proxy_cache_valid 60m;
             add_header Cache-Control "public, max-age=3600, immutable";
-        }
-
-        location /uploads {
-            # Rewrite to use the API route that serves files from standalone mode
-            rewrite ^/uploads/(.*)$ /api/uploads/$1 break;
-            proxy_pass http://nextjs;
-            proxy_cache_valid 60m;
-            add_header Cache-Control "public, max-age=3600";
         }
     }
 }
