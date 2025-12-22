@@ -135,12 +135,29 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   }, [])
 
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen()
-      setIsFullscreen(true)
+    const elem = containerRef.current
+    if (!elem) return
+
+    // Check if currently in fullscreen (handle both standard and webkit)
+    const isCurrentlyFullscreen = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement
+    )
+
+    if (!isCurrentlyFullscreen) {
+      // Enter fullscreen - try standard first, then webkit for Safari
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen()
+      } else if ((elem as any).webkitRequestFullscreen) {
+        (elem as any).webkitRequestFullscreen()
+      }
     } else {
-      document.exitFullscreen()
-      setIsFullscreen(false)
+      // Exit fullscreen - try standard first, then webkit for Safari
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen()
+      }
     }
   }, [])
 
@@ -210,6 +227,26 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       hideControlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false)
       }, 3000)
+    }
+  }, [])
+
+  // Listen for fullscreen changes (handles both standard and Safari webkit events)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement
+      )
+      setIsFullscreen(isCurrentlyFullscreen)
+    }
+
+    // Add listeners for both standard and webkit events
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
     }
   }, [])
 
