@@ -208,7 +208,7 @@ export default async function AdminDashboard() {
                       <div className="flex items-center justify-end gap-2">
                         {magazine.published && (
                           <Link
-                            href={`/magazine/${magazine.slug}`}
+                            href={`/detail/${magazine.slug}`}
                             target="_blank"
                           >
                             <Button variant="ghost" size="sm">

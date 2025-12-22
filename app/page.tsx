@@ -73,7 +73,7 @@ export default async function HomePage() {
               {magazines.map((magazine) => (
                 <Link
                   key={magazine.id}
-                  href={`/magazine/${magazine.slug}`}
+                  href={`/detail/${magazine.slug}`}
                   className="group"
                 >
                   <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">

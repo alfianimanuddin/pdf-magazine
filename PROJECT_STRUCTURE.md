@@ -75,7 +75,7 @@ The main application directory using Next.js 14 App Router.
 
 **Public Routes:**
 - `/` - Homepage with magazine grid
-- `/magazine/[slug]` - Magazine viewer with page flipping
+- `/detail/[slug]` - Magazine viewer with page flipping
 
 **Admin Routes:**
 - `/admin/login` - Admin authentication
@@ -145,7 +145,7 @@ The main application directory using Next.js 14 App Router.
 ### Magazine Viewing Flow
 
 ```
-1. User visits /magazine/[slug]
+1. User visits /detail/[slug]
    ↓
 2. Server fetches magazine + pages from DB
    ↓
