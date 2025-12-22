@@ -423,7 +423,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
             }`}
             style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', left: '1rem' } : {}}
           >
-            <ChevronLeft className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
+            <ChevronLeft className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
           </button>
         )}
 
@@ -438,7 +438,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
             }`}
             style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', right: '1rem' } : {}}
           >
-            <ChevronRight className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
+            <ChevronRight className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
           </button>
         )}
 

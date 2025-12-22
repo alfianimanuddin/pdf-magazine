@@ -30,7 +30,7 @@ export default async function MagazinePage({ params }: PageProps) {
   const magazine = await prisma.magazine.findUnique({
     where: { slug: params.slug, published: true },
     include: {
-      MagazinePage: {
+      pages: {
         orderBy: { pageNumber: 'asc' },
       },
     },
@@ -58,7 +58,7 @@ export default async function MagazinePage({ params }: PageProps) {
 
   return (
     <MagazineViewer
-      pages={magazine.MagazinePage}
+      pages={magazine.pages}
       title={magazine.title}
     />
   )

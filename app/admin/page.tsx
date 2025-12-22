@@ -19,7 +19,7 @@ export default async function AdminDashboard() {
     orderBy: { createdAt: 'desc' },
     include: {
       _count: {
-        select: { MagazineView: true },
+        select: { views: true },
       },
     },
   })
@@ -28,7 +28,7 @@ export default async function AdminDashboard() {
     total: magazines.length,
     published: magazines.filter((m) => m.published).length,
     draft: magazines.filter((m) => !m.published).length,
-    totalViews: magazines.reduce((acc, m) => acc + m._count.MagazineView, 0),
+    totalViews: magazines.reduce((acc, m) => acc + m._count.views, 0),
   }
 
   return (
@@ -199,7 +199,7 @@ export default async function AdminDashboard() {
                       {magazine.totalPages}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {magazine._count.MagazineView}
+                      {magazine._count.views}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {formatDate(magazine.createdAt)}

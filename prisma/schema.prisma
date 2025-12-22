@@ -20,8 +20,8 @@ model Magazine {
   updatedAt    DateTime       @updatedAt
   userId       String
   User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  MagazinePage MagazinePage[]
-  MagazineView MagazineView[]
+  pages MagazinePage[]
+  views MagazineView[]
 
   @@index([published])
   @@index([slug])
