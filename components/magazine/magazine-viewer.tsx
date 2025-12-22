@@ -549,12 +549,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           {isMobile ? (
             /* Mobile: Page Counter */
             <span className="text-gray-700 text-sm font-medium">
-              {currentPage === 0
-                ? `Page 1 of ${totalPages}`
-                : currentPage >= totalPages - 1
-                  ? `Page ${totalPages} of ${totalPages}`
-                  : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
-              }
+              {`Page ${currentPage + 1} of ${totalPages}`}
             </span>
           ) : (
             /* Desktop/Tablet: Zoom and Fullscreen Controls */
