@@ -58,7 +58,7 @@ export default async function MagazinePage({ params }: PageProps) {
 
   return (
     <MagazineViewer
-      pages={magazine.pages}
+      pages={magazine.MagazinePage}
       title={magazine.title}
     />
   )
