@@ -30,6 +30,10 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   const [showControls, setShowControls] = useState(false)
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const magazineRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 })
+  const previousZoomRef = useRef(1)
 
   const totalPages = pages.length
 
@@ -162,11 +166,28 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   }, [])
 
   const zoomIn = useCallback(() => {
-    setZoom((prev) => Math.min(prev + 0.2, 2))
+    setZoom((prev) => {
+      // On mobile and desktop, first zoom goes to 160% directly
+      if (prev === 1) {
+        return 1.6
+      }
+      return Math.min(prev + 0.2, 5)
+    })
   }, [])
 
   const zoomOut = useCallback(() => {
-    setZoom((prev) => Math.max(prev - 0.2, 0.6))
+    setZoom((prev) => {
+      // If zoomed in beyond 100%, go directly back to 100%
+      if (prev > 1) {
+        return 1
+      }
+      // Minimum zoom is 100%
+      return Math.max(prev - 0.2, 1)
+    })
+  }, [])
+
+  const handleZoomChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setZoom(Number(e.target.value))
   }, [])
 
   const onFlip = useCallback((e: any) => {
@@ -178,7 +199,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       try {
         await navigator.share({
           title: title,
-          text: `Check out ${title}`,
+          text: `Yuk baca ${title}. Selengkapnya di Majalah Digital Tadatodays.`,
           url: window.location.href,
         })
       } catch (err) {
@@ -191,22 +212,34 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [title])
 
-  // Handle mouse movement to show/hide controls in fullscreen
-  const handleMouseMove = useCallback(() => {
-    if (!isFullscreen) return
+  // Handle mouse movement for both drag-to-scroll and fullscreen controls
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    // Handle drag-to-scroll when zoomed
+    if (isDragging && zoom > 1) {
+      const dx = e.clientX - dragStart.x
+      const dy = e.clientY - dragStart.y
 
-    setShowControls(true)
-
-    // Clear existing timeout
-    if (hideControlsTimeoutRef.current) {
-      clearTimeout(hideControlsTimeoutRef.current)
+      if (containerRef.current) {
+        containerRef.current.scrollLeft = scrollStart.x - dx
+        containerRef.current.scrollTop = scrollStart.y - dy
+      }
     }
 
-    // Set new timeout to hide controls after 3 seconds of inactivity
-    hideControlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(false)
-    }, 3000)
-  }, [isFullscreen])
+    // Handle fullscreen controls visibility
+    if (isFullscreen) {
+      setShowControls(true)
+
+      // Clear existing timeout
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current)
+      }
+
+      // Set new timeout to hide controls after 3 seconds of inactivity
+      hideControlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false)
+      }, 3000)
+    }
+  }, [isFullscreen, isDragging, zoom, dragStart, scrollStart])
 
   // Handle mouse enter to show controls
   const handleMouseEnter = useCallback(() => {
@@ -296,19 +329,130 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [currentPage, pages])
 
+  // Maintain scroll position relative to zoom center when zooming
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const container = containerRef.current
+    const previousZoom = previousZoomRef.current
+
+    if (zoom === 1) {
+      // Reset scroll to center when returning to 100%
+      container.scrollLeft = 0
+      container.scrollTop = 0
+      previousZoomRef.current = zoom
+    } else if (previousZoom !== zoom && previousZoom !== 1) {
+      // Calculate viewport center before zoom (in content coordinates)
+      const centerX = (container.scrollLeft + container.clientWidth / 2) / previousZoom
+      const centerY = (container.scrollTop + container.clientHeight / 2) / previousZoom
+
+      // Wait for layout to settle after dimension changes
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollLeft = centerX * zoom - containerRef.current.clientWidth / 2
+            containerRef.current.scrollTop = centerY * zoom - containerRef.current.clientHeight / 2
+          }
+        })
+      })
+
+      previousZoomRef.current = zoom
+    } else if (previousZoom === 1 && zoom > 1) {
+      // When zooming in from 100%, center on the magazine
+      // Wait for layout to settle after dimension changes
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            const container = containerRef.current
+
+            // Center the magazine in the viewport
+            const scrollableWidth = container.scrollWidth - container.clientWidth
+            const scrollableHeight = container.scrollHeight - container.clientHeight
+
+            container.scrollLeft = scrollableWidth / 2
+            container.scrollTop = scrollableHeight / 2
+          }
+        })
+      })
+
+      previousZoomRef.current = zoom
+    }
+  }, [zoom])
+
   // Prevent right-click context menu
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     return false
   }, [])
 
+  // Drag to scroll functionality
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (zoom <= 1) return
+    e.preventDefault() // Prevent default drag behavior
+    setIsDragging(true)
+    setDragStart({ x: e.clientX, y: e.clientY })
+    setScrollStart({
+      x: containerRef.current?.scrollLeft || 0,
+      y: containerRef.current?.scrollTop || 0
+    })
+  }, [zoom])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  // Touch event handlers for mobile drag-to-scroll
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (zoom <= 1) return
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setDragStart({ x: touch.clientX, y: touch.clientY })
+    setScrollStart({
+      x: containerRef.current?.scrollLeft || 0,
+      y: containerRef.current?.scrollTop || 0
+    })
+  }, [zoom])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isDragging && zoom > 1) {
+      e.preventDefault() // Prevent default scrolling
+      const touch = e.touches[0]
+      const dx = touch.clientX - dragStart.x
+      const dy = touch.clientY - dragStart.y
+
+      if (containerRef.current) {
+        containerRef.current.scrollLeft = scrollStart.x - dx
+        containerRef.current.scrollTop = scrollStart.y - dy
+      }
+    }
+  }, [isDragging, zoom, dragStart, scrollStart])
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center overflow-hidden select-none"
-      style={{ height: '100vh' }}
+      className={`relative w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 select-none ${
+        zoom > 1 ? 'overflow-auto' : 'overflow-hidden flex flex-col items-center justify-center'
+      }`}
+      style={{
+        height: '100vh',
+        cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+      }}
       onMouseMove={handleMouseMove}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={handleContainerClick}
       onContextMenu={handleContextMenu}
     >
@@ -409,19 +553,25 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       {/* Magazine Book */}
       <div
         ref={magazineRef}
-        className={`relative z-10 magazine-container ${
-          isMobile || isTablet ? 'w-full' : 'transition-all duration-300'
+        className={`z-10 magazine-container ${
+          zoom > 1
+            ? 'inline-block'
+            : isMobile || isTablet
+              ? 'relative w-full'
+              : 'relative transition-all duration-300'
         }`}
         style={{
-          transform: currentPage === 0 && !isMobile && !isTablet
+          transform: currentPage === 0 && !isMobile && !isTablet && zoom <= 1
             ? `translateX(-250px)`
             : 'translateX(0)',
-          display: 'flex',
-          justifyContent: 'center'
+          ...(zoom <= 1 && {
+            display: 'flex',
+            justifyContent: 'center',
+          })
         }}
       >
         <HTMLFlipBook
-          key={`flipbook-${zoom}-${windowSize.width}`}
+          key={`flipbook-${windowSize.width}`}
           ref={bookRef}
           width={dimensions.width}
           height={dimensions.height}
@@ -433,17 +583,17 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           showCover={true}
           flippingTime={isMobile ? 500 : 800}
           usePortrait={isMobile || isTablet}
-          startPage={0}
+          startPage={currentPage}
           drawShadow={!isMobile && !isTablet}
           maxShadowOpacity={0.5}
           showPageCorners={false}
-          disableFlipByClick={false}
-          style={isMobile || isTablet ? { width: '100%' } : {}}
+          disableFlipByClick={zoom > 1}
+          style={zoom <= 1 && (isMobile || isTablet) ? { width: '100%' } : {}}
           startZIndex={0}
           autoSize={true}
-          mobileScrollSupport={true}
-          useMouseEvents={!isMobile && !isTablet}
-          swipeDistance={isMobile || isTablet ? 30 : 30}
+          mobileScrollSupport={false}
+          useMouseEvents={!isMobile && !isTablet && zoom <= 1}
+          swipeDistance={zoom > 1 ? 1000 : (isMobile || isTablet ? 30 : 30)}
           clickEventForward={true}
           renderOnlyPageLengthChange={false}
           onFlip={onFlip}
@@ -473,7 +623,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
                     onContextMenu={(e) => e.preventDefault()}
                   />
                   {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
-                  {(isMobile || isTablet) && (
+                  {(isMobile || isTablet) && zoom <= 1 && (
                     <div
                       className="absolute top-0 left-0 bottom-0 pointer-events-none"
                       style={{
@@ -489,42 +639,14 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           })}
         </HTMLFlipBook>
 
-        {/* Navigation Controls - Left & Right Buttons */}
-        {/* Previous Page Button - Left Side */}
-        {currentPage > 0 && (
-          <button
-            onClick={(e) => goToPrevPage(e)}
-            className={`absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
-              isMobile || isTablet
-                ? 'text-white bg-black/20 hover:bg-black/30'
-                : 'left-0 -translate-x-full mr-4 text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
-            }`}
-            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', left: '1rem' } : {}}
-          >
-            <ChevronLeft className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
-          </button>
-        )}
-
-        {/* Next Page Button - Right Side */}
-        {currentPage + 2 < totalPages && (
-          <button
-            onClick={(e) => goToNextPage(e)}
-            className={`absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
-              isMobile || isTablet
-                ? 'text-white bg-black/20 hover:bg-black/30'
-                : 'right-0 translate-x-full ml-4 text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
-            }`}
-            style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', right: '1rem' } : {}}
-          >
-            <ChevronRight className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
-          </button>
-        )}
-
         {/* Center Spine Shadow Effect (Desktop only) - Realistic binding shadow */}
-        {!isMobile && !isTablet && (
+        {!isMobile && !isTablet && zoom <= 1 && (
           <div
-            className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 pointer-events-none z-30 w-20 transition-opacity duration-1000"
-            style={{ opacity: currentPage === 0 ? 0 : 1 }}
+            className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-30 w-20 transition-opacity duration-1000"
+            style={{
+              opacity: currentPage === 0 ? 0 : 1,
+              height: '100%'
+            }}
           >
             <svg
               className="absolute inset-0 w-full h-full"
@@ -548,14 +670,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         )}
 
         {/* Decorative Edge Stripes (Desktop only) - Book-like visual edges with dynamic width */}
-        {!isMobile && !isTablet && (
+        {!isMobile && !isTablet && zoom <= 1 && (
           <>
             {/* Left Decorative Stripe - width based on pages remaining */}
             <div
-              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-1000"
+              className="absolute top-0 pointer-events-none transition-all duration-1000"
               style={{
                 left: '100%',
                 width: `${Math.max(2, ((totalPages - currentPage - 1) / totalPages) * 12)}px`,
+                height: '100%',
                 opacity: currentPage === 0 ? 0 : 1
               }}
             >
@@ -585,10 +708,11 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
 
             {/* Right Decorative Stripe - width based on pages read */}
             <div
-              className="absolute top-0 bottom-0 pointer-events-none transition-all duration-1000"
+              className="absolute top-0 pointer-events-none transition-all duration-1000"
               style={{
                 right: '100%',
                 width: `${Math.max(2, (currentPage / totalPages) * 12)}px`,
+                height: '100%',
                 opacity: currentPage === 0 ? 0 : 1
               }}
             >
@@ -619,45 +743,121 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         )}
       </div>
 
+      {/* Navigation Controls - Left & Right Buttons - Outside magazine container */}
+      {/* Previous Page Button - Left Side */}
+      {currentPage > 0 && (
+        <button
+          onClick={(e) => goToPrevPage(e)}
+          className={`fixed top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
+            isMobile || isTablet
+              ? 'text-white bg-black/20 hover:bg-black/30'
+              : 'text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
+          }`}
+          style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', left: '1rem' } : { left: '2rem' }}
+        >
+          <ChevronLeft className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
+        </button>
+      )}
+
+      {/* Next Page Button - Right Side */}
+      {currentPage + 2 < totalPages && (
+        <button
+          onClick={(e) => goToNextPage(e)}
+          className={`fixed top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
+            isMobile || isTablet
+              ? 'text-white bg-black/20 hover:bg-black/30'
+              : 'text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
+          }`}
+          style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', right: '1rem' } : { right: '2rem' }}
+        >
+          <ChevronRight className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
+        </button>
+      )}
+
       {/* Bottom Control Bar */}
       <div className={`fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-8 py-2 border-t border-gray-100 transition-transform duration-300 ${
         isFullscreen && !showControls ? 'translate-y-full' : 'translate-y-0'
       }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
           {isMobile ? (
-            /* Mobile: Page Counter */
-            <span className="text-gray-700 text-sm font-medium">
-              {`Page ${currentPage + 1} of ${totalPages}`}
-            </span>
+            /* Mobile: Zoom Controls and Page Counter */
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={zoomOut}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+                  disabled={zoom <= 1}
+                >
+                  <ZoomOut className="h-5 w-5" />
+                </Button>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={zoom}
+                  onChange={handleZoomChange}
+                  className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-gray-700"
+                />
+                <span className="text-gray-700 text-sm min-w-[45px] text-center font-medium">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={zoomIn}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+                  disabled={zoom >= 5}
+                >
+                  <ZoomIn className="h-5 w-5" />
+                </Button>
+              </div>
+              <span className="text-gray-700 text-sm font-medium">
+                {`Page ${currentPage + 1} of ${totalPages}`}
+              </span>
+            </div>
           ) : (
             /* Desktop/Tablet: Zoom and Fullscreen Controls */
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={zoomOut}
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
-                disabled={zoom <= 0.6}
-              >
-                <ZoomOut className="h-5 w-5" />
-              </Button>
-              <span className="text-gray-700 text-sm min-w-[50px] text-center font-medium">
-                {Math.round(zoom * 100)}%
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={zoomIn}
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
-                disabled={zoom >= 2}
-              >
-                <ZoomIn className="h-5 w-5" />
-              </Button>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={zoomOut}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+                  disabled={zoom <= 1}
+                >
+                  <ZoomOut className="h-5 w-5" />
+                </Button>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={zoom}
+                  onChange={handleZoomChange}
+                  className="w-32 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-gray-700"
+                />
+                <span className="text-gray-700 text-sm min-w-[50px] text-center font-medium">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={zoomIn}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
+                  disabled={zoom >= 5}
+                >
+                  <ZoomIn className="h-5 w-5" />
+                </Button>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleFullscreen}
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9 ml-1"
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-9 w-9"
               >
                 {isFullscreen ? (
                   <Minimize2 className="h-5 w-5" />
