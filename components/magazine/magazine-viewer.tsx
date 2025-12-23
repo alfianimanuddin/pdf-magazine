@@ -462,9 +462,14 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       onContextMenu={handleContextMenu}
     >
       {/* Header - Top Bar */}
-      <div className={`fixed top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
-        isFullscreen && !showControls ? '-translate-y-full' : 'translate-y-0'
-      }`}>
+      <div
+        className={`fixed top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-4 py-2 border-b border-gray-100 transition-transform duration-300 ${
+          isFullscreen && !showControls ? '-translate-y-full' : 'translate-y-0'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
         <div className="mx-auto flex items-center justify-between gap-4">
           {/* Mobile Layout: Fullscreen - Title - Share */}
           {isMobile ? (
@@ -576,7 +581,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         }}
       >
         <HTMLFlipBook
-          key={`flipbook-${windowSize.width}`}
+          key={`flipbook-${windowSize.width}-${zoom}`}
           ref={bookRef}
           width={dimensions.width}
           height={dimensions.height}
@@ -780,9 +785,14 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       )}
 
       {/* Bottom Control Bar */}
-      <div className={`fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-8 py-2 border-t border-gray-100 transition-transform duration-300 ${
-        isFullscreen && !showControls ? 'translate-y-full' : 'translate-y-0'
-      }`}>
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm px-4 md:px-8 py-2 border-t border-gray-100 transition-transform duration-300 ${
+          isFullscreen && !showControls ? 'translate-y-full' : 'translate-y-0'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
           {isMobile ? (
             /* Mobile: Zoom Controls and Page Counter */
