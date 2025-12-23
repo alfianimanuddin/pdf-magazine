@@ -165,7 +165,9 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [])
 
-  const zoomIn = useCallback(() => {
+  const zoomIn = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
     setZoom((prev) => {
       // On mobile and desktop, first zoom goes to 160% directly
       if (prev === 1) {
@@ -175,7 +177,9 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     })
   }, [])
 
-  const zoomOut = useCallback(() => {
+  const zoomOut = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
     setZoom((prev) => {
       // If zoomed in beyond 100%, go directly back to 100%
       if (prev > 1) {
@@ -187,6 +191,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   }, [])
 
   const handleZoomChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation()
     setZoom(Number(e.target.value))
   }, [])
 
