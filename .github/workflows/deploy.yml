@@ -21,6 +21,10 @@ jobs:
             cd /var/www/magazine
             git pull origin master
             docker-compose down
+
+            # Clean up Docker resources to free space
+            docker system prune -af --volumes
+
             docker-compose build --no-cache app
-            docker-compose up -d
+            docker-compose up -d postgres app
             echo "Deployment completed at $(date)"
