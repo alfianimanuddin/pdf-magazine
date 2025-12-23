@@ -85,14 +85,27 @@ export default function UploadPage() {
       clearInterval(progressInterval)
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Upload gagal')
+        // Check if response is JSON before parsing
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const error = await response.json()
+          throw new Error(error.error || 'Upload gagal')
+        } else {
+          // If response is not JSON (e.g., HTML error page), use status text
+          throw new Error(`Upload gagal: ${response.status} ${response.statusText}`)
+        }
       }
 
       setUploadStatus('processing')
       setUploadProgress(100)
 
-      const result = await response.json()
+      // Check if success response is JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Respons server tidak valid')
+      }
+
+      await response.json() // Validate JSON response
 
       setTimeout(() => {
         setUploadStatus('success')
