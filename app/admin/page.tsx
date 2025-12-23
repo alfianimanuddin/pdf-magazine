@@ -172,12 +172,12 @@ export default async function AdminDashboard() {
                             <BookOpen className="h-6 w-6 text-slate-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                           )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-slate-900">
+                        <div className="ml-4 max-w-md">
+                          <div className="text-sm font-medium text-slate-900 truncate">
                             {magazine.title}
                           </div>
                           {magazine.description && (
-                            <div className="text-sm text-slate-500 line-clamp-1">
+                            <div className="text-sm text-slate-500 truncate">
                               {magazine.description}
                             </div>
                           )}

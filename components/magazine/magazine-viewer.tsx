@@ -125,18 +125,41 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   }, [isMobile, isTablet, zoom, windowSize.width, windowSize.height, isFullscreen])
 
   const goToNextPage = useCallback((e?: React.MouseEvent) => {
+    console.log('goToNextPage called, currentPage:', currentPage)
     e?.stopPropagation()
     if (bookRef.current) {
-      bookRef.current.pageFlip().flipNext()
+      console.log('bookRef.current exists, flipping to page:', currentPage + 2)
+      try {
+        const pageFlip = bookRef.current.pageFlip()
+        // Try using flip() with specific page number instead of flipNext()
+        pageFlip.flip(currentPage + 2)
+        console.log('flip() completed')
+      } catch (error) {
+        console.error('Error calling flip():', error)
+      }
+    } else {
+      console.error('bookRef.current is null')
     }
-  }, [])
+  }, [currentPage])
 
   const goToPrevPage = useCallback((e?: React.MouseEvent) => {
+    console.log('goToPrevPage called, currentPage:', currentPage)
     e?.stopPropagation()
     if (bookRef.current) {
-      bookRef.current.pageFlip().flipPrev()
+      const targetPage = Math.max(0, currentPage - 2)
+      console.log('bookRef.current exists, flipping to page:', targetPage)
+      try {
+        const pageFlip = bookRef.current.pageFlip()
+        // Try using flip() with specific page number instead of flipPrev()
+        pageFlip.flip(targetPage)
+        console.log('flip() completed to page:', targetPage)
+      } catch (error) {
+        console.error('Error calling flip():', error)
+      }
+    } else {
+      console.error('bookRef.current is null')
     }
-  }, [])
+  }, [currentPage])
 
   const toggleFullscreen = useCallback(() => {
     const elem = containerRef.current
@@ -393,6 +416,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   // Drag to scroll functionality
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (zoom <= 1) return
+
+    // Don't initiate drag if clicking a button or interactive element
+    const target = e.target as HTMLElement
+    const tagName = target.tagName?.toUpperCase()
+    if (target.closest('button') || target.closest('input') || target.closest('a') ||
+        tagName === 'BUTTON' || tagName === 'SVG' || tagName === 'PATH') {
+      return
+    }
+
     e.preventDefault() // Prevent default drag behavior
     setIsDragging(true)
     setDragStart({ x: e.clientX, y: e.clientY })
@@ -413,6 +445,19 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   // Touch event handlers for mobile drag-to-scroll
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (zoom <= 1) return
+
+    // Don't initiate drag if touching a button or interactive element
+    const target = e.target as HTMLElement
+    const tagName = target.tagName?.toUpperCase()
+    console.log('handleTouchStart - target:', target, 'tagName:', tagName, 'closest button:', target.closest('button'))
+
+    if (target.closest('button') || target.closest('input') || target.closest('a') ||
+        tagName === 'BUTTON' || tagName === 'SVG' || tagName === 'PATH') {
+      console.log('handleTouchStart - skipping drag (button detected)')
+      return
+    }
+
+    console.log('handleTouchStart - initiating drag')
     const touch = e.touches[0]
     setIsDragging(true)
     setDragStart({ x: touch.clientX, y: touch.clientY })
@@ -424,7 +469,6 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (isDragging && zoom > 1) {
-      e.preventDefault() // Prevent default scrolling
       const touch = e.touches[0]
       const dx = touch.clientX - dragStart.x
       const dy = touch.clientY - dragStart.y
@@ -597,7 +641,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           drawShadow={!isMobile && !isTablet}
           maxShadowOpacity={0.5}
           showPageCorners={false}
-          disableFlipByClick={zoom > 1}
+          disableFlipByClick={false}
           style={zoom <= 1 && (isMobile || isTablet) ? { width: '100%' } : {}}
           startZIndex={0}
           autoSize={true}
@@ -757,30 +801,38 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       {/* Previous Page Button - Left Side */}
       {currentPage > 0 && (
         <button
-          onClick={(e) => goToPrevPage(e)}
-          className={`fixed top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
+          onClick={(e) => {
+            console.log('Previous button onClick triggered')
+            e.stopPropagation()
+            goToPrevPage(e)
+          }}
+          className={`fixed top-1/2 -translate-y-1/2 z-30 transition-all duration-300 rounded-full p-2 ${
             isMobile || isTablet
-              ? 'text-white bg-black/20 hover:bg-black/30'
+              ? 'text-white bg-black/20 hover:bg-black/30 active:bg-black/40'
               : 'text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
           }`}
-          style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', left: '1rem' } : { left: '2rem' }}
+          style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', left: '1rem', touchAction: 'manipulation', pointerEvents: 'auto' } : { left: '2rem', pointerEvents: 'auto' }}
         >
-          <ChevronLeft className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
+          <ChevronLeft className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} style={{ pointerEvents: 'none' }} />
         </button>
       )}
 
       {/* Next Page Button - Right Side */}
       {currentPage + 2 < totalPages && (
         <button
-          onClick={(e) => goToNextPage(e)}
-          className={`fixed top-1/2 -translate-y-1/2 z-20 transition-all duration-300 rounded-full p-2 ${
+          onClick={(e) => {
+            console.log('Next button onClick triggered')
+            e.stopPropagation()
+            goToNextPage(e)
+          }}
+          className={`fixed top-1/2 -translate-y-1/2 z-30 transition-all duration-300 rounded-full p-2 ${
             isMobile || isTablet
-              ? 'text-white bg-black/20 hover:bg-black/30'
+              ? 'text-white bg-black/20 hover:bg-black/30 active:bg-black/40'
               : 'text-gray-600 hover:text-gray-800 bg-white/10 hover:bg-white/20'
           }`}
-          style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', right: '1rem' } : { right: '2rem' }}
+          style={isMobile || isTablet ? { filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', right: '1rem', touchAction: 'manipulation', pointerEvents: 'auto' } : { right: '2rem', pointerEvents: 'auto' }}
         >
-          <ChevronRight className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} />
+          <ChevronRight className="h-8 w-8 md:h-12 md:w-12" strokeWidth={1.5} style={{ pointerEvents: 'none' }} />
         </button>
       )}
 

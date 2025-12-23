@@ -49,12 +49,24 @@ export async function POST(request: NextRequest) {
 
     // Create magazine record first to get ID
     const slug = generateSlug(title)
-    
-    // Check if slug exists
+
+    // Clean up any orphaned/incomplete records with this slug
+    // (these are records where PDF processing failed previously)
+    await prisma.magazine.deleteMany({
+      where: {
+        slug,
+        OR: [
+          { pdfPath: '' },
+          { totalPages: 0 },
+        ],
+      },
+    })
+
+    // Check if slug exists (after cleanup)
     const existingMagazine = await prisma.magazine.findUnique({
       where: { slug },
     })
-    
+
     if (existingMagazine) {
       return NextResponse.json(
         { error: 'Majalah dengan judul serupa sudah ada' },
@@ -117,9 +129,14 @@ export async function POST(request: NextRequest) {
       })
     } catch (processingError) {
       // Delete magazine if processing fails
-      await prisma.magazine.delete({
-        where: { id: magazine.id },
-      })
+      try {
+        await prisma.magazine.delete({
+          where: { id: magazine.id },
+        })
+      } catch (deleteError) {
+        console.error('Failed to cleanup magazine after processing error:', deleteError)
+        // Continue to throw the original processing error
+      }
       throw processingError
     }
   } catch (error) {
