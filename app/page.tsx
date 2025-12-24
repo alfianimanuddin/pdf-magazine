@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen } from 'lucide-react'
 
-// Force dynamic rendering - skip pre-rendering during build
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic' // Don't pre-render during build
+export const revalidate = 60 // Revalidate every minute
 
 export default async function HomePage() {
   const magazines = await prisma.magazine.findMany({
