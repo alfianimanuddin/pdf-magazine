@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { generateOrganizationSchema, generateWebSiteSchema } from "@/lib/structured-data"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -13,12 +14,16 @@ export const metadata: Metadata = {
     "Majalah digital Tadatodays menghadirkan liputan khusus, cerita mendalam, dan perspektif editorial pilihan dalam pengalaman membaca interaktif berkelas.",
   keywords: [
     "majalah digital",
+    "majalah online Indonesia",
+    "majalah digital Indonesia",
+    "baca majalah online",
+    "majalah interaktif",
+    "Tadatodays",
     "majalah editorial",
     "liputan khusus",
-    "Tadatodays",
-    "majalah online Indonesia",
-    "majalah interaktif",
     "jurnalisme mendalam",
+    "media digital Indonesia",
+    "berita mendalam",
   ],
   authors: [{ name: "Tadatodays" }],
   creator: "Tadatodays",
@@ -31,6 +36,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://majalah.tadatodays.com"),
   alternates: {
     canonical: "/",
+    languages: {
+      'id-ID': 'https://majalah.tadatodays.com',
+      'id': 'https://majalah.tadatodays.com',
+    },
   },
   openGraph: {
     type: "website",
@@ -98,6 +107,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(generateOrganizationSchema()),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(generateWebSiteSchema()),
+          }}
+        />
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   )

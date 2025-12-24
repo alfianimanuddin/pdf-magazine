@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen } from 'lucide-react'
 
-export const dynamic = 'force-dynamic' // Don't pre-render during build
-export const revalidate = 60 // Revalidate every minute
+// Use ISR for better performance while keeping content fresh
+export const revalidate = 300 // Revalidate every 5 minutes
 
 export default async function HomePage() {
   const magazines = await prisma.magazine.findMany({

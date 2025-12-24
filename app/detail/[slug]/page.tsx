@@ -2,11 +2,32 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { MagazineViewer } from '@/components/magazine/magazine-viewer'
 import { headers } from 'next/headers'
+import { generateMagazineSchema, generateBreadcrumbSchema } from '@/lib/structured-data'
 
 interface PageProps {
   params: {
     slug: string
   }
+}
+
+// Enable ISR: Revalidate every hour
+export const revalidate = 3600
+
+// Allow on-demand generation for magazines not in generateStaticParams
+export const dynamicParams = true
+
+// Pre-render top 50 magazines at build time
+export async function generateStaticParams() {
+  const magazines = await prisma.magazine.findMany({
+    where: { published: true },
+    select: { slug: true },
+    orderBy: { createdAt: 'desc' },
+    take: 50, // Pre-render top 50 magazines, others generated on-demand
+  })
+
+  return magazines.map((magazine) => ({
+    slug: magazine.slug,
+  }))
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -42,6 +63,9 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: `${magazine.title} - Tada Todays Magazine`,
     description: magazine.description || `Read ${magazine.title} online`,
+    alternates: {
+      canonical: `/detail/${magazine.slug}`,
+    },
     openGraph: {
       type: 'article',
       locale: 'id_ID',
@@ -102,9 +126,23 @@ export default async function MagazinePage({ params }: PageProps) {
   })
 
   return (
-    <MagazineViewer
-      pages={magazine.pages}
-      title={magazine.title}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(generateMagazineSchema({ magazine })),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(generateBreadcrumbSchema(magazine)),
+        }}
+      />
+      <MagazineViewer
+        pages={magazine.pages}
+        title={magazine.title}
+      />
+    </>
   )
 }

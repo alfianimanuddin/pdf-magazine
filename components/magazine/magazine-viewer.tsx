@@ -34,6 +34,12 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 })
   const previousZoomRef = useRef(1)
+  const [isPinching, setIsPinching] = useState(false)
+  const initialPinchDistanceRef = useRef(0)
+  const initialPinchZoomRef = useRef(1)
+  const pinchCenterRef = useRef({ x: 0, y: 0 })
+  const animationFrameRef = useRef<number | null>(null)
+  const pendingZoomRef = useRef<number | null>(null)
 
   const totalPages = pages.length
 
@@ -324,6 +330,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     }
   }, [])
 
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
+  }, [])
+
   // Reset controls visibility when entering/exiting fullscreen
   useEffect(() => {
     if (isFullscreen) {
@@ -446,11 +461,28 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     setIsDragging(false)
   }, [])
 
-  // Touch event handlers for mobile drag-to-scroll
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (zoom <= 1) return
+  // Helper function to calculate distance between two touch points
+  const getTouchDistance = useCallback((touches: React.TouchList) => {
+    const touch1 = touches[0]
+    const touch2 = touches[1]
+    const dx = touch1.clientX - touch2.clientX
+    const dy = touch1.clientY - touch2.clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }, [])
 
-    // Don't initiate drag if touching a button or interactive element
+  // Helper function to get center point between two touches
+  const getTouchCenter = useCallback((touches: React.TouchList) => {
+    const touch1 = touches[0]
+    const touch2 = touches[1]
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    }
+  }, [])
+
+  // Touch event handlers for mobile drag-to-scroll and pinch-to-zoom
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't initiate drag/pinch if touching a button or interactive element
     const target = e.target as HTMLElement
     const tagName = target.tagName?.toUpperCase()
     console.log('handleTouchStart - target:', target, 'tagName:', tagName, 'closest button:', target.closest('button'))
@@ -461,6 +493,20 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       return
     }
 
+    // Two finger pinch gesture
+    if (e.touches.length === 2) {
+      console.log('handleTouchStart - initiating pinch')
+      e.preventDefault()
+      setIsPinching(true)
+      initialPinchDistanceRef.current = getTouchDistance(e.touches)
+      initialPinchZoomRef.current = zoom
+      pinchCenterRef.current = getTouchCenter(e.touches)
+      return
+    }
+
+    // Single finger drag (only when zoomed in)
+    if (zoom <= 1) return
+
     console.log('handleTouchStart - initiating drag')
     const touch = e.touches[0]
     setIsDragging(true)
@@ -469,10 +515,36 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       x: containerRef.current?.scrollLeft || 0,
       y: containerRef.current?.scrollTop || 0
     })
-  }, [zoom])
+  }, [zoom, getTouchDistance, getTouchCenter])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isDragging && zoom > 1) {
+    // Handle pinch-to-zoom with two fingers
+    if (isPinching && e.touches.length === 2) {
+      e.preventDefault()
+      const currentDistance = getTouchDistance(e.touches)
+      const scale = currentDistance / initialPinchDistanceRef.current
+      const newZoom = Math.max(1, Math.min(5, initialPinchZoomRef.current * scale))
+
+      // Store the pending zoom value
+      pendingZoomRef.current = newZoom
+
+      // Cancel any pending animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+
+      // Use requestAnimationFrame for smooth updates
+      animationFrameRef.current = requestAnimationFrame(() => {
+        if (pendingZoomRef.current !== null) {
+          setZoom(pendingZoomRef.current)
+          pendingZoomRef.current = null
+        }
+      })
+      return
+    }
+
+    // Handle single finger drag when zoomed in
+    if (isDragging && zoom > 1 && e.touches.length === 1) {
       const touch = e.touches[0]
       const dx = touch.clientX - dragStart.x
       const dy = touch.clientY - dragStart.y
@@ -482,10 +554,18 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
         containerRef.current.scrollTop = scrollStart.y - dy
       }
     }
-  }, [isDragging, zoom, dragStart, scrollStart])
+  }, [isDragging, isPinching, zoom, dragStart, scrollStart, getTouchDistance])
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false)
+    setIsPinching(false)
+
+    // Clean up any pending animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+    pendingZoomRef.current = null
   }, [])
 
   return (
@@ -496,7 +576,10 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       }`}
       style={{
         height: '100vh',
-        cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+        cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        touchAction: isPinching ? 'none' : 'auto',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
       }}
       onMouseMove={handleMouseMove}
       onMouseDown={handleMouseDown}
@@ -626,6 +709,8 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
           transform: currentPage === 0 && !isMobile && !isTablet && zoom <= 1
             ? `translateX(-250px)`
             : 'translateX(0)',
+          transition: isPinching ? 'none' : 'transform 0.1s ease-out',
+          willChange: isPinching ? 'transform' : 'auto',
           ...(zoom <= 1 && {
             display: 'flex',
             justifyContent: 'center',
