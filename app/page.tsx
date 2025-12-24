@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen } from 'lucide-react'
+import { blurDataURL } from '@/lib/image-blur'
 
 // Use ISR for better performance while keeping content fresh
 export const revalidate = 60 // Revalidate every minute
@@ -94,7 +95,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {magazines.map((magazine) => (
+              {magazines.map((magazine, index) => (
                 <Link
                   key={magazine.id}
                   href={`/detail/${magazine.slug}`}
@@ -108,6 +109,10 @@ export default async function HomePage() {
                           src={magazine.coverImage}
                           alt={magazine.title}
                           fill
+                          priority={index < 4}
+                          placeholder="blur"
+                          blurDataURL={blurDataURL}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (

@@ -5,6 +5,7 @@ import HTMLFlipBook from 'react-pageflip'
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, ZoomIn, ZoomOut, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { magazineBlurDataURL } from '@/lib/image-blur'
 
 interface Page {
   id: string
@@ -16,6 +17,58 @@ interface MagazineViewerProps {
   pages: Page[]
   title: string
 }
+
+// Memoized page component to prevent unnecessary re-renders
+const MagazinePage = React.memo(({
+  page,
+  shouldPreload,
+  isMobile,
+  isTablet,
+  zoom
+}: {
+  page: Page
+  shouldPreload: boolean
+  isMobile: boolean
+  isTablet: boolean
+  zoom: number
+}) => {
+  return (
+    <div
+      key={page.id}
+      className="page bg-white"
+      style={{ boxShadow: '0 0 2px 1px rgba(140, 140, 140, 0.25)' }}
+      data-density={page.pageNumber === 1 ? "hard" : "soft"}
+    >
+      <div className="page-content relative w-full h-full">
+        <Image
+          src={page.imagePath}
+          alt={`Page ${page.pageNumber}`}
+          fill
+          className="object-contain"
+          priority={shouldPreload}
+          placeholder="blur"
+          blurDataURL={magazineBlurDataURL}
+          loading={shouldPreload ? 'eager' : 'lazy'}
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+        {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
+        {(isMobile || isTablet) && zoom <= 1 && (
+          <div
+            className="absolute top-0 left-0 bottom-0 pointer-events-none"
+            style={{
+              width: '40px',
+              background: 'linear-gradient(to right, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.08) 30%, rgba(0, 0, 0, 0.03) 60%, transparent)',
+              zIndex: 10
+            }}
+          />
+        )}
+      </div>
+    </div>
+  )
+})
+
+MagazinePage.displayName = 'MagazinePage'
 
 export function MagazineViewer({ pages, title }: MagazineViewerProps) {
   const bookRef = useRef<any>(null)
@@ -752,36 +805,14 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
               (index >= currentPage - 2 && index <= currentPage + 4)
 
             return (
-              <div
+              <MagazinePage
                 key={page.id}
-                className="page bg-white"
-                style={{ boxShadow: '0 0 2px 1px rgba(140, 140, 140, 0.25)' }}
-                data-density={index === 0 ? "hard" : "soft"}
-              >
-                <div className="page-content relative w-full h-full">
-                  <Image
-                    src={page.imagePath}
-                    alt={`Page ${page.pageNumber}`}
-                    fill
-                    className="object-contain"
-                    priority={shouldPreload}
-                    loading={shouldPreload ? 'eager' : 'lazy'}
-                    draggable={false}
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
-                  {/* Left side shadow for realistic magazine effect - Mobile & Tablet */}
-                  {(isMobile || isTablet) && zoom <= 1 && (
-                    <div
-                      className="absolute top-0 left-0 bottom-0 pointer-events-none"
-                      style={{
-                        width: '40px',
-                        background: 'linear-gradient(to right, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.08) 30%, rgba(0, 0, 0, 0.03) 60%, transparent)',
-                        zIndex: 10
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
+                page={page}
+                shouldPreload={shouldPreload}
+                isMobile={isMobile}
+                isTablet={isTablet}
+                zoom={zoom}
+              />
             )
           })}
         </HTMLFlipBook>

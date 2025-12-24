@@ -85,15 +85,16 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
   },
   manifest: "/manifest.json",
-  themeColor: "#ffffff",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
   verification: {
     google: "5OgnD1t86ZI7HqW1qGdq0-KdXuL89Sj6T35kOfehHlE",
   },
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#ffffff",
 }
 
 
