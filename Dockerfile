@@ -50,6 +50,7 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Copy prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
 
 # Create uploads directory
