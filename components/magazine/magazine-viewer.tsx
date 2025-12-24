@@ -128,11 +128,13 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     console.log('goToNextPage called, currentPage:', currentPage)
     e?.stopPropagation()
     if (bookRef.current) {
-      console.log('bookRef.current exists, flipping to page:', currentPage + 2)
+      // In portrait mode (mobile/tablet), advance by 1 page. In landscape (desktop), advance by 2 pages
+      const increment = (isMobile || isTablet) ? 1 : 2
+      console.log('bookRef.current exists, flipping to page:', currentPage + increment)
       try {
         const pageFlip = bookRef.current.pageFlip()
         // Try using flip() with specific page number instead of flipNext()
-        pageFlip.flip(currentPage + 2)
+        pageFlip.flip(currentPage + increment)
         console.log('flip() completed')
       } catch (error) {
         console.error('Error calling flip():', error)
@@ -140,13 +142,15 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     } else {
       console.error('bookRef.current is null')
     }
-  }, [currentPage])
+  }, [currentPage, isMobile, isTablet])
 
   const goToPrevPage = useCallback((e?: React.MouseEvent) => {
     console.log('goToPrevPage called, currentPage:', currentPage)
     e?.stopPropagation()
     if (bookRef.current) {
-      const targetPage = Math.max(0, currentPage - 2)
+      // In portrait mode (mobile/tablet), go back by 1 page. In landscape (desktop), go back by 2 pages
+      const decrement = (isMobile || isTablet) ? 1 : 2
+      const targetPage = Math.max(0, currentPage - decrement)
       console.log('bookRef.current exists, flipping to page:', targetPage)
       try {
         const pageFlip = bookRef.current.pageFlip()
@@ -159,7 +163,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
     } else {
       console.error('bookRef.current is null')
     }
-  }, [currentPage])
+  }, [currentPage, isMobile, isTablet])
 
   const toggleFullscreen = useCallback(() => {
     const elem = containerRef.current
@@ -563,7 +567,9 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
                         ? `Page 1 of ${totalPages}`
                         : currentPage >= totalPages - 1
                           ? `Page ${totalPages} of ${totalPages}`
-                          : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
+                          : isTablet
+                            ? `Page ${currentPage + 1} of ${totalPages}`
+                            : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
                       }
                     </span>
                   </button>
@@ -576,7 +582,9 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
                       ? `Page 1 of ${totalPages}`
                       : currentPage >= totalPages - 1
                         ? `Page ${totalPages} of ${totalPages}`
-                        : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
+                        : isTablet
+                          ? `Page ${currentPage + 1} of ${totalPages}`
+                          : `Pages ${currentPage + 1} - ${Math.min(currentPage + 2, totalPages)} of ${totalPages}`
                     }
                   </span>
 
@@ -818,7 +826,7 @@ export function MagazineViewer({ pages, title }: MagazineViewerProps) {
       )}
 
       {/* Next Page Button - Right Side */}
-      {currentPage + 2 < totalPages && (
+      {((isMobile || isTablet) ? currentPage + 1 < totalPages : currentPage + 2 < totalPages) && (
         <button
           onClick={(e) => {
             console.log('Next button onClick triggered')
