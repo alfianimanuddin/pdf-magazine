@@ -77,9 +77,16 @@ export default function UploadPage() {
         })
       }, 200)
 
+      // Create AbortController with extended timeout (10 minutes for large PDFs)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 600000) // 10 minutes
+
       const response = await fetch('/api/magazines/upload', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
+      }).finally(() => {
+        clearTimeout(timeoutId)
       })
 
       clearInterval(progressInterval)
@@ -117,7 +124,17 @@ export default function UploadPage() {
     } catch (error) {
       console.error('Upload error:', error)
       setUploadStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan saat upload')
+
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          setErrorMessage('Upload timeout - PDF terlalu besar atau koneksi lambat. Silakan coba lagi atau gunakan file yang lebih kecil.')
+        } else {
+          setErrorMessage(error.message)
+        }
+      } else {
+        setErrorMessage('Terjadi kesalahan saat upload')
+      }
     } finally {
       setIsUploading(false)
     }
@@ -274,7 +291,8 @@ export default function UploadPage() {
                     </div>
                     <Progress value={100} />
                     <p className="text-xs text-slate-500 mt-2">
-                      Mengkonversi halaman PDF menjadi gambar. Ini mungkin memakan waktu beberapa saat...
+                      Mengkonversi halaman PDF menjadi gambar berkualitas tinggi. Untuk PDF dengan banyak halaman,
+                      proses ini bisa memakan waktu beberapa menit. Mohon jangan tutup halaman ini.
                     </p>
                   </div>
                 )}

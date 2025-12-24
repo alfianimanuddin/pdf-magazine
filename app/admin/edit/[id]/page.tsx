@@ -115,9 +115,16 @@ export default function EditMagazinePage() {
         })
       }, 200)
 
+      // Create AbortController with extended timeout (10 minutes for large PDFs)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 600000) // 10 minutes
+
       const response = await fetch(`/api/magazines/${magazineId}`, {
         method: 'PUT',
         body: formData,
+        signal: controller.signal,
+      }).finally(() => {
+        clearTimeout(timeoutId)
       })
 
       clearInterval(progressInterval)
@@ -152,7 +159,17 @@ export default function EditMagazinePage() {
     } catch (error) {
       console.error('Update error:', error)
       setUploadStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan saat update')
+
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          setErrorMessage('Update timeout - PDF terlalu besar atau koneksi lambat. Silakan coba lagi atau gunakan file yang lebih kecil.')
+        } else {
+          setErrorMessage(error.message)
+        }
+      } else {
+        setErrorMessage('Terjadi kesalahan saat update')
+      }
     } finally {
       setIsUpdating(false)
     }
@@ -350,7 +367,8 @@ export default function EditMagazinePage() {
                     <Progress value={100} />
                     {file && (
                       <p className="text-xs text-slate-500 mt-2">
-                        Mengkonversi halaman PDF menjadi gambar. Ini mungkin memakan waktu beberapa saat...
+                        Mengkonversi halaman PDF menjadi gambar berkualitas tinggi. Untuk PDF dengan banyak halaman,
+                        proses ini bisa memakan waktu beberapa menit. Mohon jangan tutup halaman ini.
                       </p>
                     )}
                   </div>
