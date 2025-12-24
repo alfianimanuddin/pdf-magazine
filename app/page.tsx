@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen } from 'lucide-react'
 
+// Force dynamic rendering - skip pre-rendering during build
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const magazines = await prisma.magazine.findMany({
     where: { published: true },
