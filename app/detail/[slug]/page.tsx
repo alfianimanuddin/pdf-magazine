@@ -10,32 +10,8 @@ interface PageProps {
   }
 }
 
-// Enable ISR: Revalidate every hour
-export const revalidate = 3600
-
-// Allow on-demand generation for magazines not in generateStaticParams
-export const dynamicParams = true
-
-// Pre-render top 50 magazines at build time
-export async function generateStaticParams() {
-  try {
-    const magazines = await prisma.magazine.findMany({
-      where: { published: true },
-      select: { slug: true },
-      orderBy: { createdAt: 'desc' },
-      take: 50, // Pre-render top 50 magazines, others generated on-demand
-    })
-
-    return magazines.map((magazine) => ({
-      slug: magazine.slug,
-    }))
-  } catch (error) {
-    // Database not available during build (e.g., Docker build process)
-    // Return empty array - pages will be generated on-demand via dynamicParams
-    console.warn('Database unavailable during build, skipping static generation:', error)
-    return []
-  }
-}
+// Force dynamic rendering because we use headers() for view tracking
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: PageProps) {
   const magazine = await prisma.magazine.findUnique({
