@@ -48,10 +48,10 @@ jobs:
 
             # Run database migrations
             echo "Running database migrations..."
-            docker-compose exec -T app node node_modules/prisma/build/index.js migrate deploy
+            docker-compose exec -T app node /usr/local/bin/prisma migrate deploy
 
             # Seed database with admin user
             echo "Seeding database..."
-            docker-compose exec -T app node node_modules/prisma/build/index.js db seed || echo "Database already seeded"
+            docker-compose exec -T app node /usr/local/bin/prisma db seed || echo "Database already seeded"
 
             echo "Deployment completed at $(date)"
