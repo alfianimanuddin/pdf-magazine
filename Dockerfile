@@ -54,6 +54,9 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
 
+# Copy bcryptjs for seeding
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+
 # Create symlink for prisma CLI
 RUN ln -s /app/node_modules/prisma/build/index.js /usr/local/bin/prisma && chmod +x /usr/local/bin/prisma
 
