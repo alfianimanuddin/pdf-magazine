@@ -66,6 +66,7 @@
 .page {
   background-color: white;
   box-shadow: 0 0 2px 1px rgba(217, 217, 217, 0.25);
+  position: relative;
 }
 
 .page-content {
@@ -75,12 +76,21 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  position: relative;
   /* border: 1px solid #e5e7eb; */
 }
 
 /* Smooth page transitions */
 .stf__parent {
   perspective: 2000px;
+}
+
+.stf__parent,
+.stf__wrapper,
+.stf__block,
+.stf__item,
+.page {
+  height: 100% !important;
 }
 
 .stf__item {
