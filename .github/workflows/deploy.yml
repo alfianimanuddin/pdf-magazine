@@ -41,4 +41,17 @@ jobs:
 
             docker-compose build --no-cache app
             docker-compose up -d postgres app
+
+            # Wait for app to be ready
+            echo "Waiting for application to start..."
+            sleep 10
+
+            # Run database migrations
+            echo "Running database migrations..."
+            docker-compose exec -T app node node_modules/prisma/build/index.js migrate deploy
+
+            # Seed database with admin user
+            echo "Seeding database..."
+            docker-compose exec -T app node node_modules/prisma/build/index.js db seed || echo "Database already seeded"
+
             echo "Deployment completed at $(date)"
