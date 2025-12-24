@@ -92,10 +92,7 @@ export const metadata: Metadata = {
     maximumScale: 5,
   },
   verification: {
-    // Add your verification codes here when available
-    // google: "your-google-verification-code",
-    // yandex: "your-yandex-verification-code",
-    // bing: "your-bing-verification-code",
+    google: "5OgnD1t86ZI7HqW1qGdq0-KdXuL89Sj6T35kOfehHlE",
   },
 }
 
