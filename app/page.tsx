@@ -4,19 +4,43 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen } from 'lucide-react'
 
-export const dynamic = 'force-dynamic' // Don't pre-render during build
+// Use ISR for better performance while keeping content fresh
 export const revalidate = 60 // Revalidate every minute
 
+type Magazine = {
+  id: string
+  title: string
+  slug: string
+  description: string | null
+  coverImage: string | null
+  totalPages: number
+  published: boolean
+  createdAt: Date
+  updatedAt: Date
+  _count: {
+    views: number
+  }
+}
+
 export default async function HomePage() {
-  const magazines = await prisma.magazine.findMany({
-    where: { published: true },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: {
-        select: { views: true },
+  let magazines: Magazine[]
+
+  try {
+    magazines = await prisma.magazine.findMany({
+      where: { published: true },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { views: true },
+        },
       },
-    },
-  })
+    })
+  } catch (error) {
+    // Database unavailable during build - return empty array
+    // Page will be generated on-demand when database is available
+    console.warn('Database unavailable, returning empty magazine list:', error)
+    magazines = []
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
